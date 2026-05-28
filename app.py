@@ -59,6 +59,11 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 app.config["UPLOAD_FOLDER"] = "uploads"
 
+os.makedirs(
+    app.config["UPLOAD_FOLDER"],
+    exist_ok=True
+)
+
 db = SQLAlchemy(app)
 
 bcrypt = Bcrypt(app)
