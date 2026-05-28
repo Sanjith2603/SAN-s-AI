@@ -6,5 +6,4 @@ python-dotenv
 openai
 pypdf
 gunicorn
-psycopg2-binary
 Pillow
