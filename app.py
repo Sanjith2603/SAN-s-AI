@@ -50,7 +50,7 @@ app = Flask(__name__)
 
 app.config["SECRET_KEY"] = "supersecretkey"
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:0987@localhost/aichatbot"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
