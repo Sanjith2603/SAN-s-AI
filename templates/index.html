@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>AI Assistant</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <!-- SIDEBAR -->
+
+        <div class="sidebar">
+
+            <div class="logo-section">
+
+                <div class="logo-icon">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+
+                <div>
+                    <h2>AI Assistant</h2>
+                    <p>Smart AI Platform</p>
+                </div>
+
+            </div>
+
+            <a href="/clear" class="sidebar-btn clear-btn">
+                <i class="fa-solid fa-trash"></i>
+                Clear Chat
+            </a>
+
+            <a href="/logout" class="sidebar-btn logout-btn">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                Logout
+            </a>
+
+        </div>
+
+        <!-- MAIN CHAT -->
+
+        <div class="main-chat">
+
+            <!-- HEADER -->
+
+            <div class="chat-header">
+
+                <div>
+
+                    <h2>Hello, {{ username }}</h2>
+
+                    <p>How can I help you today?</p>
+
+                </div>
+
+            </div>
+
+            <!-- CHAT AREA -->
+
+            <div class="chat-box" id="chat-box">
+
+                {% if chat_history|length == 0 %}
+
+                    <div class="welcome-screen">
+
+                        <div class="welcome-icon">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        </div>
+
+                        <h1>Welcome to AI Assistant</h1>
+
+                        <p>
+                            Upload files or ask anything to get started
+                        </p>
+
+                    </div>
+
+                {% endif %}
+
+                {% for message in chat_history %}
+
+                    <div class="message-wrapper {{ message.role }}">
+
+                        <div class="message {{ message.role }}">
+
+                            {% if message.content.startswith("Uploaded file:") %}
+
+    <div class="upload-message">
+
+        📎 {{ message.content }}
+
+    </div>
+
+{% else %}
+
+    {{ message.content }}
+
+{% endif %}
+
+                        </div>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+            <!-- MEDIA UPLOAD -->
+
+           <form
+    action="/upload"
+    method="POST"
+    enctype="multipart/form-data"
+    class="upload-form"
+>
+
+    <input
+        type="file"
+        name="file"
+        required
+    >
+
+    <button type="submit">
+        Upload Media
+    </button>
+
+</form>
+
+            <!-- CHAT INPUT -->
+
+            <form
+                method="POST"
+                class="chat-form"
+                id="chat-form"
+            >
+
+                <input
+                    type="text"
+                    name="message"
+                    placeholder="Message AI Assistant..."
+                    autocomplete="off"
+                    required
+                >
+
+                <button type="submit">
+
+                    <i class="fa-solid fa-paper-plane"></i>
+
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <script
+        src="{{ url_for('static', filename='script.js') }}"
+    ></script>
+
+</body>
+
+</html>
