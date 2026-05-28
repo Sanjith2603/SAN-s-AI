@@ -26,6 +26,7 @@ from openai import OpenAI
 from pypdf import PdfReader
 
 import os
+import base64
 
 # =========================
 # LOAD ENV
@@ -49,6 +50,8 @@ client = OpenAI(
 app = Flask(__name__)
 
 app.config["SECRET_KEY"] = "supersecretkey"
+
+# SQLITE FOR EASY DEPLOYMENT
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
 
@@ -132,6 +135,8 @@ def load_user(user_id):
 
 media_context = ""
 
+uploaded_image_base64 = None
+
 # =========================
 # REGISTER
 # =========================
@@ -213,6 +218,12 @@ def logout():
 @login_required
 def clear_chat():
 
+    global media_context
+    global uploaded_image_base64
+
+    media_context = ""
+    uploaded_image_base64 = None
+
     Chat.query.filter_by(
         user_id=current_user.id
     ).delete()
@@ -230,6 +241,7 @@ def clear_chat():
 def upload_file():
 
     global media_context
+    global uploaded_image_base64
 
     file = request.files["file"]
 
@@ -244,7 +256,7 @@ def upload_file():
 
     file.save(filepath)
 
-    # SAVE FILE MESSAGE IN CHAT
+    # SAVE FILE MESSAGE
 
     upload_chat = Chat(
 
@@ -263,7 +275,7 @@ def upload_file():
 
     filename = file.filename.lower()
 
-    # PDF PROCESSING
+    # PDF
 
     if filename.endswith(".pdf"):
 
@@ -281,7 +293,9 @@ def upload_file():
 
         media_context = text
 
-    # IMAGE PROCESSING
+        uploaded_image_base64 = None
+
+    # IMAGE
 
     elif (
         filename.endswith(".png")
@@ -289,14 +303,18 @@ def upload_file():
         or filename.endswith(".jpeg")
     ):
 
+        with open(filepath, "rb") as image_file:
+
+            uploaded_image_base64 = base64.b64encode(
+                image_file.read()
+            ).decode("utf-8")
+
         media_context = f"""
         User uploaded image:
         {file.filename}
-
-        Analyze image if user asks about it.
         """
 
-    # TEXT FILE PROCESSING
+    # TEXT FILE
 
     elif filename.endswith(".txt"):
 
@@ -304,12 +322,16 @@ def upload_file():
 
             media_context = f.read()
 
+        uploaded_image_base64 = None
+
     else:
 
         media_context = f"""
         Uploaded file:
         {file.filename}
         """
+
+        uploaded_image_base64 = None
 
     return redirect(url_for("home"))
 
@@ -322,6 +344,7 @@ def upload_file():
 def home():
 
     global media_context
+    global uploaded_image_base64
 
     if request.method == "POST":
 
@@ -370,12 +393,53 @@ def home():
                 "content": chat.message
             })
 
-        # AI RESPONSE
+        # =========================
+        # VISION MODEL
+        # =========================
 
-        completion = client.chat.completions.create(
-            model="openai/gpt-3.5-turbo",
-            messages=messages
-        )
+        if uploaded_image_base64:
+
+            completion = client.chat.completions.create(
+
+                model="openai/gpt-4o-mini",
+
+                messages=[
+
+                    {
+                        "role": "user",
+
+                        "content": [
+
+                            {
+                                "type": "text",
+
+                                "text": user_message
+                            },
+
+                            {
+                                "type": "image_url",
+
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{uploaded_image_base64}"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            )
+
+        # =========================
+        # NORMAL TEXT MODEL
+        # =========================
+
+        else:
+
+            completion = client.chat.completions.create(
+
+                model="openai/gpt-3.5-turbo",
+
+                messages=messages
+            )
 
         bot_response = completion.choices[0].message.content
 
